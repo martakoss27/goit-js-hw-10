@@ -1,5 +1,6 @@
 import axios from 'axios';
 import SlimSelect from 'slim-select';
+import Notiflix from 'notiflix';
 // Ustawienie nagłówka z kluczem API
 axios.defaults.headers.common['x-api-key'] =
   'live_Azme2SGnu6hL9Sr8t6i2ko7AHTHcmkv2YFx2dLSlUrOohIiXyuSbZh3xe00pBDOH';
