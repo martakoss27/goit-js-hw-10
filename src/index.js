@@ -1,114 +1,80 @@
-import axios from 'axios';
+import * as catApi from './cat-api';
 import SlimSelect from 'slim-select';
+import '../node_modules/slim-select/dist/slimselect.css';
 import Notiflix from 'notiflix';
-// Ustawienie nagłówka z kluczem API
-axios.defaults.headers.common['x-api-key'] =
-  'live_Azme2SGnu6hL9Sr8t6i2ko7AHTHcmkv2YFx2dLSlUrOohIiXyuSbZh3xe00pBDOH';
 
-// Powiązanie elementów DOM
+const API_KEY =
+  'live_7RIdaPQIKQeuQ4h5OHhIknuCKcTJHhxKZ6jGEa1GCIsFM4TeRDRzpC67rBRSSXOw';
+
 const breedSelect = document.querySelector('.breed-select');
-const catInfoBox = document.querySelector('.cat-info');
+const catInfo = document.querySelector('.cat-info');
 const loader = document.querySelector('.loader');
 const error = document.querySelector('.error');
 
-// Dodanie nasłuchiwania na zdarzenie zmiany dla select
-breedSelect.addEventListener('change', handleBreedChange);
+breedSelect.addEventListener('change', handleChange);
+breedSelect.classList.add('hidden');
+error.classList.add('hidden');
 
-// Funkcja obsługująca zmianę rasy kota
-function handleBreedChange(event) {
-  const breedId = event.target.value;
-  if (breedId) {
-    showLoader();
-    hideError();
-    fetchCatInfo(breedId);
-  } else {
-    hideCatInfo();
-  }
-}
-
-// Funkcja wyświetlająca animację ładowania
-function showLoader() {
-  loader.style.display = 'block';
-}
-
-// Funkcja ukrywająca animację ładowania
-function hideLoader() {
-  loader.style.display = 'none';
-}
-// Funkcja wyświetlająca komunikat o błędzie
-function showError() {
-  error.style.display = 'block';
-}
-// Funkcja ukrywająca komunikat o błędzie
-function hideError() {
-  error.style.display = 'none';
-}
-
-// Funkcja żądająca informacji o kocie
-function fetchCatInfo(breedId) {
-  // Wykonaj żądanie HTTP, aby pobrać informacje o kocie na podstawie identyfikatora rasy
-  axios
-    .get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}`)
-    .then(response => {
-      //console.log(response.data[0]);
-      const catInfo = response.data[0];
-      createPost(catInfo);
+function addList(items) {
+  const markup = items
+    .map(item => {
+      return `<option value=${item.reference_image_id}>${item.name} </option>`;
     })
-    .catch(error => {
-      console.error(error);
-      showError();
-    })
-    .finally(() => {
-      hideLoader();
-    });
+    .join('');
+  breedSelect.innerHTML = markup;
 }
 
-// Utworzenie postu o kocie
-function createPost(catInfo) {
-  const { name, description, temperament } = catInfo.breeds[0];
-  const { url } = catInfo;
-  const markupHTML = `
-    <div>
-    <img class="postImage" src="${url}" alt="">
-      <h2>${name}</h2>
-      <p><strong>Description:</strong> ${description}</p>
-      <p><strong>Temperament:</strong> ${temperament}</p>
-    </div>
+//creating post on website with cat name, image and descripion
+function createPost(item) {
+  const markup = `
+  <img class="postImage" src="${item.url}" alt="">
+  <div>
+    <h1>${item.breeds[0].name}</h1>
+    <p>${item.breeds[0].description}</p>
+    <p><b>Temperament: </b>${item.breeds[0].temperament}</p>
+  </div>
   `;
-
-  catInfoBox.innerHTML = markupHTML;
-  catInfoBox.style.display = 'block';
+  catInfo.innerHTML = markup;
 }
 
-// Inicjalizacja aplikacji - pobranie listy ras kota
-function initializeApp() {
-  showLoader();
-  axios
-    .get('https://api.thecatapi.com/v1/breeds')
-    .then(response => {
-      const breeds = response.data;
-      fillBreedSelect(breeds);
+function handleChange(event) {
+  loader.classList.remove('hidden');
+  catInfo.classList.add('hidden');
+  catApi
+    .fetchCatByBreed(event.currentTarget.value)
+    .then(function (response) {
+      createPost(response);
+      loader.classList.add('hidden');
+      catInfo.classList.remove('hidden');
+      error.classList.add('hidden');
     })
-    .catch(error => {
-      console.error(error);
-      showError();
-    })
-    .finally(() => {
-      hideLoader();
+    .catch(function (error) {
+      Notiflix.Notify.failure(
+        'Upps! Coś poszło nie tak. Odśwież stronę jeszcze raz.'
+      );
+      error.classList.remove('hidden');
+      loader.classList.add('hidden');
+      console.log(error);
     });
 }
 
-// Funkcja wypełniająca select opcjami ras kotów
-function fillBreedSelect(breeds) {
-  breeds.forEach(breed => {
-    const option = document.createElement('option');
-    option.value = breed.id;
-    option.textContent = breed.name;
-    breedSelect.appendChild(option);
+catApi.init(API_KEY);
+catApi
+  .fetchBreeds()
+  .then(function (response) {
+    addList(response);
+    loader.classList.add('hidden');
+    breedSelect.classList.remove('hidden');
+    error.classList.add('hidden');
+    const select = new SlimSelect({
+      select: breedSelect,
+    });
+  })
+  .catch(function (error) {
+    Notiflix.Notify.failure(
+      'Oops! Something went wrong! Try reloading the page!'
+    );
+    error.classList.remove('hidden');
+    loader.classList.add('hidden');
+    console.log(error);
   });
-}
-
-// Inicjalizacja aplikacji po załadowaniu strony
-document.addEventListener('DOMContentLoaded', () => {
-  initializeApp();
-});
