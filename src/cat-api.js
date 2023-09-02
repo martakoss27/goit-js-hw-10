@@ -1,28 +1,22 @@
-import axios from 'axios';
-
-let axiosCatApi = null;
-
-//config function
-export function init(api_key) {
-  axiosCatApi = require('axios').default;
-  axiosCatApi.defaults.headers.common['x-api-key'] = api_key;
-}
-
-//capturing array of all objects from the server
 export function fetchBreeds() {
-  return axiosCatApi
-    .get(`https://api.thecatapi.com/v1/breeds`)
+  return axios
+    .get('https://api.thecatapi.com/v1/breeds')
     .then(response => response.data)
     .catch(error => {
-      console.error(error);
+      console.error('Wystąpił błąd podczas pobierania kolekcji ras:', error);
+      throw error;
     });
 }
-//capturing 1 object from the server
+
 export function fetchCatByBreed(breedId) {
-  return axiosCatApi
-    .get(`https://api.thecatapi.com/v1/images/${breedId}`)
+  return axios
+    .get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}`)
     .then(response => response.data)
     .catch(error => {
-      console.error(error);
+      console.error(
+        'Wystąpił błąd podczas pobierania informacji o kocie:',
+        error
+      );
+      throw error;
     });
 }
